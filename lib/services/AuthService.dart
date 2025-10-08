@@ -3,16 +3,16 @@ import 'package:http/http.dart' as http;
 import 'package:jwt_decode/jwt_decode.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class AuthService{
+class AuthService {
   final String baseUrl = "http://localhost:8080/api/auth";
-  
-  Future<bool> login(String email, String password) async{
+
+  Future<bool> login(String email, String password) async {
     final url = Uri.parse('$baseUrl/login');
     final headers = {'Content-Type': 'application/json'};
     final body = jsonEncode({'email': email, 'password': password});
     final response = await http.post(url, headers: headers, body: body);
 
-    if(response.statusCode == 200 || response.statusCode == 201){
+    if (response.statusCode == 200 || response.statusCode == 201) {
       final data = jsonDecode(response.body);
       String token = data['token'];
 
@@ -26,13 +26,13 @@ class AuthService{
       await preferences.setString('userEmail', email);
 
       return true;
-    }else{
+    } else {
       print('Failed to login.');
       return false;
     }
   }
 
-  Future<String?> getUserRole() async{
+  Future<String?> getUserRole() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     String? role = preferences.getString('userRole');
     print(role);

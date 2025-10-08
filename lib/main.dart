@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:crems/pages/Home.dart';
-import 'package:crems/pages/SignIn.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -25,7 +24,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.deepPurple,
-        fontFamily: 'Roboto', // Or any font you prefer
+        fontFamily: 'Roboto',
       ),
       // Apply the custom scroll behavior here
       scrollBehavior: MyCustomScrollBehavior(),
