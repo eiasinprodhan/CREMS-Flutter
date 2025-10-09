@@ -1,6 +1,7 @@
-import 'package:crems/entity/Employee.dart';
-import 'package:crems/entity/Project.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:crems/entity/Project.dart';
+import 'package:crems/services/ProjectService.dart';
 
 class Projects extends StatefulWidget {
   const Projects({Key? key}) : super(key: key);
@@ -10,221 +11,60 @@ class Projects extends StatefulWidget {
 }
 
 class _ProjectsState extends State<Projects> {
+  final ProjectService _projectService = ProjectService();
   List<Project> _projects = [];
+  bool _isLoading = true;
 
-  // Mock employees list (replace with your real employee list)
-  final List<Employee> _employees = [
-    Employee(id: 1, name: 'Alice Johnson'),
-    Employee(id: 2, name: 'Bob Smith'),
-    Employee(id: 3, name: 'Carol Williams'),
-  ];
-
-  final List<String> _projectTypes = ['Residential', 'Commercial', 'Industrial', 'Infrastructure'];
-
-  void _addOrEditProject({Project? existingProject, int? index}) {
-    final _formKey = GlobalKey<FormState>();
-
-    final nameController = TextEditingController(text: existingProject?.name ?? '');
-    final budgetController = TextEditingController(text: existingProject?.budget?.toString() ?? '');
-    final startDateController = TextEditingController(text: existingProject?.startDate ?? '');
-    final endDateController = TextEditingController(text: existingProject?.expectedEndDate ?? '');
-    final descriptionController = TextEditingController(text: existingProject?.description ?? '');
-
-    String? selectedProjectType = existingProject?.projectType;
-    Employee? selectedManager = existingProject?.projectManager;
-
-    Future<void> _pickDate(TextEditingController controller) async {
-      DateTime? pickedDate = await showDatePicker(
-        context: context,
-        initialDate: DateTime.tryParse(controller.text) ?? DateTime.now(),
-        firstDate: DateTime(2000),
-        lastDate: DateTime(2100),
-      );
-      if (pickedDate != null) {
-        controller.text = pickedDate.toIso8601String().split('T')[0];
-      }
-    }
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(existingProject == null ? 'Add Project' : 'Edit Project'),
-        content: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Project Name
-                TextFormField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Project Name'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter project name';
-                    }
-                    return null;
-                  },
-                ),
-
-                // Budget
-                TextFormField(
-                  controller: budgetController,
-                  decoration: const InputDecoration(labelText: 'Budget'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter budget';
-                    }
-                    if (int.tryParse(value) == null) {
-                      return 'Enter valid number';
-                    }
-                    return null;
-                  },
-                ),
-
-                // Start Date picker
-                TextFormField(
-                  controller: startDateController,
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    labelText: 'Start Date',
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.calendar_today),
-                      onPressed: () => _pickDate(startDateController),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please select start date';
-                    }
-                    return null;
-                  },
-                ),
-
-                // Expected End Date picker
-                TextFormField(
-                  controller: endDateController,
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    labelText: 'Expected End Date',
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.calendar_today),
-                      onPressed: () => _pickDate(endDateController),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please select end date';
-                    }
-                    return null;
-                  },
-                ),
-
-                // Project Type Dropdown
-                DropdownButtonFormField<String>(
-                  value: selectedProjectType,
-                  decoration: const InputDecoration(labelText: 'Project Type'),
-                  items: _projectTypes
-                      .map((type) => DropdownMenuItem(value: type, child: Text(type)))
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedProjectType = value;
-                    });
-                  },
-                  validator: (value) => value == null ? 'Please select project type' : null,
-                ),
-
-                // Project Manager Dropdown
-                DropdownButtonFormField<Employee>(
-                  value: selectedManager,
-                  decoration: const InputDecoration(labelText: 'Project Manager'),
-                  items: _employees
-                      .map(
-                        (e) => DropdownMenuItem(
-                      value: e,
-                      child: Text("Employee"),
-                    ),
-                  )
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedManager = value;
-                    });
-                  },
-                  validator: (value) => value == null ? 'Please select project manager' : null,
-                ),
-
-                // Description
-                TextFormField(
-                  controller: descriptionController,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                  maxLines: 3,
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.pop(context),
-          ),
-          ElevatedButton(
-            child: Text(existingProject == null ? 'Add' : 'Save'),
-            onPressed: () {
-              if (_formKey.currentState!.validate()) {
-                final newProject = Project(
-                  id: existingProject?.id ?? DateTime.now().millisecondsSinceEpoch,
-                  name: nameController.text.trim(),
-                  budget: int.tryParse(budgetController.text.trim()),
-                  startDate: startDateController.text.trim(),
-                  expectedEndDate: endDateController.text.trim(),
-                  projectType: selectedProjectType,
-                  projectManager: selectedManager,
-                  description: descriptionController.text.trim(),
-                );
-
-                setState(() {
-                  if (index != null) {
-                    _projects[index] = newProject;
-                  } else {
-                    _projects.add(newProject);
-                  }
-                });
-
-                Navigator.pop(context);
-              }
-            },
-          ),
-        ],
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    _fetchProjects();
   }
 
-  void _deleteProject(int index) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Delete Project'),
-        content: const Text('Are you sure you want to delete this project?'),
-        actions: [
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.pop(context),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete'),
-            onPressed: () {
-              setState(() => _projects.removeAt(index));
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
-    );
+  Future<void> _fetchProjects() async {
+    try {
+      final projects = await _projectService.getAllProjects();
+      setState(() {
+        _projects = projects;
+      });
+    } catch (e) {
+      debugPrint("Error fetching projects: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to load projects")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'N/A';
+    return DateFormat.yMMMd().format(date);
+  }
+
+  String _formatCurrency(double? amount) {
+    if (amount == null) return 'N/A';
+    return NumberFormat.simpleCurrency().format(amount);
+  }
+
+  String _getProjectStatus(Project project) {
+    final now = DateTime.now();
+    if (project.expectedEndDate != null && now.isAfter(project.expectedEndDate!)) {
+      return "Completed";
+    }
+    return "Ongoing";
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case "Completed":
+        return Colors.green.shade600;
+      case "Ongoing":
+      default:
+        return Colors.orange.shade600;
+    }
   }
 
   void _viewProject(Project project) {
@@ -236,36 +76,198 @@ class _ProjectsState extends State<Projects> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInfoRow('Budget:', project.budget != null ? '\$${project.budget}' : 'N/A'),
-              _buildInfoRow('Start Date:', project.startDate ?? 'N/A'),
-              _buildInfoRow('Expected End Date:', project.expectedEndDate ?? 'N/A'),
-              _buildInfoRow('Project Type:', project.projectType ?? 'N/A'),
-              _buildInfoRow('Project Manager:', project.projectManager?.name ?? 'N/A'),
+              Text(project.description ?? 'No description provided.'),
               const SizedBox(height: 12),
-              const Text('Description:', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text(project.description ?? 'No description provided'),
+              Text('Budget: ${_formatCurrency(project.budget)}'),
+              Text('Start Date: ${_formatDate(project.startDate)}'),
+              Text('Expected End Date: ${_formatDate(project.expectedEndDate)}'),
+              Text('Project Type: ${project.projectType ?? 'N/A'}'),
+              Text('Project Manager: ${project.projectManager?.name ?? 'N/A'}'),
             ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+        ],
+      ),
+    );
+  }
+
+  void _showAddEditDialog({Project? project}) {
+    final _formKey = GlobalKey<FormState>();
+    String? _name = project?.name;
+    double? _budget = project?.budget;
+    DateTime? _startDate = project?.startDate;
+    DateTime? _expectedEndDate = project?.expectedEndDate;
+    String? _projectType = project?.projectType;
+    String? _description = project?.description;
+
+    Future<void> _pickDate(BuildContext context, DateTime? initialDate, ValueChanged<DateTime> onDatePicked) async {
+      final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: initialDate ?? DateTime.now(),
+        firstDate: DateTime(2000),
+        lastDate: DateTime(2100),
+      );
+      if (picked != null) {
+        onDatePicked(picked);
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(project == null ? 'Add Project' : 'Edit Project'),
+        content: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  initialValue: _name,
+                  decoration: const InputDecoration(labelText: 'Project Name'),
+                  validator: (value) => value == null || value.isEmpty ? 'Please enter project name' : null,
+                  onSaved: (value) => _name = value,
+                ),
+                TextFormField(
+                  initialValue: _budget?.toString(),
+                  decoration: const InputDecoration(labelText: 'Budget'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Please enter budget';
+                    if (double.tryParse(value) == null) return 'Enter valid number';
+                    return null;
+                  },
+                  onSaved: (value) => _budget = double.tryParse(value ?? ''),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Text('Start Date: '),
+                    Text(_startDate == null ? 'Not selected' : _formatDate(_startDate)),
+                    IconButton(
+                      icon: const Icon(Icons.calendar_today),
+                      onPressed: () async {
+                        await _pickDate(context, _startDate, (picked) {
+                          _startDate = picked;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Text('Expected End Date: '),
+                    Text(_expectedEndDate == null ? 'Not selected' : _formatDate(_expectedEndDate)),
+                    IconButton(
+                      icon: const Icon(Icons.calendar_today),
+                      onPressed: () async {
+                        await _pickDate(context, _expectedEndDate, (picked) {
+                          _expectedEndDate = picked;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                TextFormField(
+                  initialValue: _projectType,
+                  decoration: const InputDecoration(labelText: 'Project Type'),
+                  onSaved: (value) => _projectType = value,
+                ),
+                TextFormField(
+                  initialValue: _description,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                  maxLines: 3,
+                  onSaved: (value) => _description = value,
+                ),
+              ],
+            ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (_formKey.currentState?.validate() ?? false) {
+                _formKey.currentState?.save();
+
+                Project newProject = Project(
+                  id: project?.id,
+                  name: _name,
+                  budget: _budget,
+                  startDate: _startDate,
+                  expectedEndDate: _expectedEndDate,
+                  projectType: _projectType,
+                  description: _description,
+                );
+
+                Navigator.pop(context);
+
+                // Optimistic UI: Show success immediately
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(project == null
+                        ? 'Project saved (pending server confirmation)'
+                        : 'Project updated (pending server confirmation)'),
+                  ),
+                );
+
+                bool success;
+                if (project == null) {
+                  success = await _projectService.saveProject(newProject);
+                } else {
+                  success = await _projectService.updateProject(newProject);
+                }
+
+                if (!success && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Server failed to save project')),
+                  );
+                }
+
+                if (mounted) _fetchProjects();
+              }
+            },
+            child: Text(project == null ? 'Save' : 'Update'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(width: 8),
-          Expanded(child: Text(value)),
+  void _deleteProject(Project project) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Confirm Delete'),
+        content: Text('Are you sure you want to delete "${project.name}"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(context); // close dialog
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Project deleted (pending server confirmation)')),
+              );
+
+              bool success = await _projectService.deleteProject(project.id!);
+
+              if (!success && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Server failed to delete project')),
+                );
+              }
+
+              if (mounted) _fetchProjects();
+            },
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -273,77 +275,189 @@ class _ProjectsState extends State<Projects> {
 
   @override
   Widget build(BuildContext context) {
-    final isWideScreen = MediaQuery.of(context).size.width > 800;
+    final width = MediaQuery.of(context).size.width;
+    int crossAxisCount;
+
+    if (width >= 1200) {
+      crossAxisCount = 4;
+    } else if (width >= 900) {
+      crossAxisCount = 3;
+    } else if (width >= 600) {
+      crossAxisCount = 2;
+    } else {
+      crossAxisCount = 1;
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Projects'),
         backgroundColor: Colors.deepPurple,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: ElevatedButton.icon(
+              onPressed: () => _showAddEditDialog(),
+              icon: const Icon(Icons.add),
+              label: const Text("Add Project"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.deepPurple,
+              ),
+            ),
+          ),
+        ],
       ),
-      body: Padding(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _projects.isEmpty
+          ? const Center(child: Text("No projects found."))
+          : Padding(
         padding: const EdgeInsets.all(16),
-        child: _projects.isEmpty
-            ? const Center(child: Text('No projects added yet.'))
-            : GridView.builder(
+        child: GridView.builder(
+          itemCount: _projects.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: isWideScreen ? 2 : 1,
+            crossAxisCount: crossAxisCount,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            childAspectRatio: 3,
+            childAspectRatio: 1.5,
           ),
-          itemCount: _projects.length,
           itemBuilder: (context, index) {
             final project = _projects[index];
-            return Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () => _viewProject(project),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              project.name ?? 'Unnamed Project',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text('Budget: \$${project.budget ?? 'N/A'}'),
-                            Text('Type: ${project.projectType ?? 'N/A'}'),
-                            Text('Manager: ${project.projectManager?.name ?? 'N/A'}'),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () => _addOrEditProject(existingProject: project, index: index),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _deleteProject(index),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
+            return _buildProjectCard(project);
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _addOrEditProject(),
-        icon: const Icon(Icons.add),
-        label: const Text('Add Project'),
-        backgroundColor: Colors.deepPurple,
+    );
+  }
+
+  Widget _buildProjectCard(Project project) {
+    final status = _getProjectStatus(project);
+    final statusColor = _getStatusColor(status);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title + status badge
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  project.name ?? 'Unnamed Project',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  status,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Budget
+          Row(
+            children: [
+              const Icon(Icons.monetization_on, size: 18, color: Colors.deepPurple),
+              const SizedBox(width: 6),
+              Text(
+                _formatCurrency(project.budget),
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // Manager
+          Row(
+            children: [
+              const Icon(Icons.person, size: 18, color: Colors.deepPurple),
+              const SizedBox(width: 6),
+              Text(
+                project.projectManager?.name ?? 'N/A',
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // Dates
+          Row(
+            children: [
+              const Icon(Icons.calendar_today, size: 16, color: Colors.deepPurple),
+              const SizedBox(width: 6),
+              Text(
+                "Start: ${_formatDate(project.startDate)}",
+                style: const TextStyle(fontSize: 13),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const Icon(Icons.flag, size: 16, color: Colors.deepPurple),
+              const SizedBox(width: 6),
+              Text(
+                "End: ${_formatDate(project.expectedEndDate)}",
+                style: const TextStyle(fontSize: 13),
+              ),
+            ],
+          ),
+
+          const Spacer(),
+
+          // Action buttons
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              IconButton(
+                tooltip: 'View',
+                icon: const Icon(Icons.visibility_outlined, color: Colors.blueAccent),
+                onPressed: () => _viewProject(project),
+              ),
+              IconButton(
+                tooltip: 'Edit',
+                icon: const Icon(Icons.edit_outlined, color: Colors.orange),
+                onPressed: () => _showAddEditDialog(project: project),
+              ),
+              IconButton(
+                tooltip: 'Delete',
+                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                onPressed: () => _deleteProject(project),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
