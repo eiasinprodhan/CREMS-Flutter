@@ -1,3 +1,5 @@
+import 'package:crems/pages/Dashboard.dart';
+import 'package:crems/pages/Projects.dart';
 import 'package:crems/pages/SignIn.dart';
 import 'package:crems/services/AuthService.dart';
 import 'package:crems/services/EmployeeService.dart';
@@ -130,6 +132,22 @@ class _UserProfileState extends State<UserProfile> {
         padding: EdgeInsets.zero,
         children: [
           _buildDrawerHeader(),
+          ListTile(
+            leading: const Icon(Icons.person_outline),
+            title: const Text('Dashboard'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => Dashboard()),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.person_outline),
+            title: const Text('Projects'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => Projects()),
+            ),
+          ),
           ListTile(
             leading: const Icon(Icons.person_outline),
             title: const Text('My Profile'),
