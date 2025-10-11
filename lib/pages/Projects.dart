@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:crems/entity/Project.dart';
+import 'package:crems/entity/Employee.dart';
 import 'package:crems/services/ProjectService.dart';
+import 'package:crems/services/EmployeeService.dart';
 
 class Projects extends StatefulWidget {
   const Projects({Key? key}) : super(key: key);
@@ -12,13 +14,18 @@ class Projects extends StatefulWidget {
 
 class _ProjectsState extends State<Projects> {
   final ProjectService _projectService = ProjectService();
+  final EmployeeService _employeeService = EmployeeService();
+
   List<Project> _projects = [];
+  List<Employee> _projectManagers = [];
+
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _fetchProjects();
+    _fetchProjectManagers();
   }
 
   Future<void> _fetchProjects() async {
@@ -36,6 +43,23 @@ class _ProjectsState extends State<Projects> {
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _fetchProjectManagers() async {
+    try {
+      final managers = await _employeeService.getEmployeeByRole("PROJECT_MANAGER");
+      print(managers);
+      setState(() {
+        _projectManagers = managers;
+      });
+    } catch (e) {
+      debugPrint("Error fetching project managers: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to load project managers")),
+        );
+      }
     }
   }
 
@@ -95,24 +119,14 @@ class _ProjectsState extends State<Projects> {
 
   void _showAddEditDialog({Project? project}) {
     final _formKey = GlobalKey<FormState>();
+
     String? _name = project?.name;
     double? _budget = project?.budget;
     DateTime? _startDate = project?.startDate;
     DateTime? _expectedEndDate = project?.expectedEndDate;
     String? _projectType = project?.projectType;
     String? _description = project?.description;
-
-    Future<void> _pickDate(BuildContext context, DateTime? initialDate, ValueChanged<DateTime> onDatePicked) async {
-      final DateTime? picked = await showDatePicker(
-        context: context,
-        initialDate: initialDate ?? DateTime.now(),
-        firstDate: DateTime(2000),
-        lastDate: DateTime(2100),
-      );
-      if (picked != null) {
-        onDatePicked(picked);
-      }
-    }
+    Employee? _selectedManager = project?.projectManager;
 
     showDialog(
       context: context,
@@ -149,9 +163,15 @@ class _ProjectsState extends State<Projects> {
                     IconButton(
                       icon: const Icon(Icons.calendar_today),
                       onPressed: () async {
-                        await _pickDate(context, _startDate, (picked) {
-                          _startDate = picked;
-                        });
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: _startDate ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null) {
+                          setState(() => _startDate = picked);
+                        }
                       },
                     ),
                   ],
@@ -163,9 +183,15 @@ class _ProjectsState extends State<Projects> {
                     IconButton(
                       icon: const Icon(Icons.calendar_today),
                       onPressed: () async {
-                        await _pickDate(context, _expectedEndDate, (picked) {
-                          _expectedEndDate = picked;
-                        });
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: _expectedEndDate ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null) {
+                          setState(() => _expectedEndDate = picked);
+                        }
                       },
                     ),
                   ],
@@ -181,15 +207,28 @@ class _ProjectsState extends State<Projects> {
                   maxLines: 3,
                   onSaved: (value) => _description = value,
                 ),
+                DropdownButtonFormField<Employee>(
+                  value: _selectedManager,
+                  decoration: const InputDecoration(labelText: 'Project Manager'),
+                  items: _projectManagers.map((manager) {
+                    return DropdownMenuItem<Employee>(
+                      value: manager,
+                      child: Text(manager.name ?? 'Unnamed'),
+                    );
+                  }).toList(),
+                  onChanged: (selected) {
+                    setState(() {
+                      _selectedManager = selected;
+                    });
+                  },
+                  validator: (value) => value == null ? 'Please select a project manager' : null,
+                ),
               ],
             ),
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () async {
               if (_formKey.currentState?.validate() ?? false) {
@@ -203,11 +242,11 @@ class _ProjectsState extends State<Projects> {
                   expectedEndDate: _expectedEndDate,
                   projectType: _projectType,
                   description: _description,
+                  projectManager: _selectedManager,
                 );
 
                 Navigator.pop(context);
 
-                // Optimistic UI: Show success immediately
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(project == null
@@ -216,12 +255,9 @@ class _ProjectsState extends State<Projects> {
                   ),
                 );
 
-                bool success;
-                if (project == null) {
-                  success = await _projectService.saveProject(newProject);
-                } else {
-                  success = await _projectService.updateProject(newProject);
-                }
+                bool success = project == null
+                    ? await _projectService.saveProject(newProject)
+                    : await _projectService.updateProject(newProject);
 
                 if (!success && mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -250,20 +286,16 @@ class _ProjectsState extends State<Projects> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              Navigator.pop(context); // close dialog
-
+              Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Project deleted (pending server confirmation)')),
               );
-
               bool success = await _projectService.deleteProject(project.id!);
-
               if (!success && mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Server failed to delete project')),
                 );
               }
-
               if (mounted) _fetchProjects();
             },
             child: const Text('Delete'),
@@ -351,16 +383,12 @@ class _ProjectsState extends State<Projects> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title + status badge
           Row(
             children: [
               Expanded(
                 child: Text(
                   project.name ?? 'Unnamed Project',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
               ),
               Container(
@@ -371,19 +399,12 @@ class _ProjectsState extends State<Projects> {
                 ),
                 child: Text(
                   status,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
-
           const SizedBox(height: 12),
-
-          // Budget
           Row(
             children: [
               const Icon(Icons.monetization_on, size: 18, color: Colors.deepPurple),
@@ -394,10 +415,7 @@ class _ProjectsState extends State<Projects> {
               ),
             ],
           ),
-
           const SizedBox(height: 8),
-
-          // Manager
           Row(
             children: [
               const Icon(Icons.person, size: 18, color: Colors.deepPurple),
@@ -408,18 +426,12 @@ class _ProjectsState extends State<Projects> {
               ),
             ],
           ),
-
           const SizedBox(height: 8),
-
-          // Dates
           Row(
             children: [
               const Icon(Icons.calendar_today, size: 16, color: Colors.deepPurple),
               const SizedBox(width: 6),
-              Text(
-                "Start: ${_formatDate(project.startDate)}",
-                style: const TextStyle(fontSize: 13),
-              ),
+              Text("Start: ${_formatDate(project.startDate)}", style: const TextStyle(fontSize: 13)),
             ],
           ),
           const SizedBox(height: 4),
@@ -427,16 +439,10 @@ class _ProjectsState extends State<Projects> {
             children: [
               const Icon(Icons.flag, size: 16, color: Colors.deepPurple),
               const SizedBox(width: 6),
-              Text(
-                "End: ${_formatDate(project.expectedEndDate)}",
-                style: const TextStyle(fontSize: 13),
-              ),
+              Text("End: ${_formatDate(project.expectedEndDate)}", style: const TextStyle(fontSize: 13)),
             ],
           ),
-
           const Spacer(),
-
-          // Action buttons
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
