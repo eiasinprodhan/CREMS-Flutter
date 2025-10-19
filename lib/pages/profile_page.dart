@@ -652,7 +652,7 @@ class _ProfilePageState extends State<ProfilePage>
   Widget _buildStatsGrid() {
     final counts = _dataCounts;
     final currencyFormat =
-    NumberFormat.compactCurrency(locale: 'en_US', symbol: '\$');
+    NumberFormat.compactCurrency(locale: 'en_US', symbol: '\৳');
 
     return GridView.count(
       crossAxisCount: 2,
@@ -772,7 +772,7 @@ class _ProfilePageState extends State<ProfilePage>
     final color = isCredit ? accentGreen : accentRed;
     final icon =
     isCredit ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
-    final currencyFormat = NumberFormat.currency(locale: 'en_US', symbol: '\$');
+    final currencyFormat = NumberFormat.currency(locale: 'en_US', symbol: '\৳');
     final sign = isCredit ? '+' : '-';
 
     return Container(

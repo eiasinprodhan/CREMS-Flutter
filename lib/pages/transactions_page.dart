@@ -310,7 +310,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
     final IconData typeIcon = isCredit ? Icons.arrow_downward : Icons.arrow_upward;
     final String sign = isCredit ? '+' : '-';
     final formattedDate = transaction.date != null ? DateFormat.yMMMMd().format(transaction.date!) : 'No Date';
-    final formattedAmount = NumberFormat.currency(locale: 'en_US', symbol: '\$').format(transaction.amount ?? 0);
+    final formattedAmount = NumberFormat.currency(locale: 'en_US', symbol: '\৳').format(transaction.amount ?? 0);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

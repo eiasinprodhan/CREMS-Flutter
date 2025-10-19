@@ -42,11 +42,11 @@ class _BuildingUnitsPageState extends State<BuildingUnitsPage> {
   // State variables for price range dropdown filter
   final List<String> _priceRanges = [
     'Any Price',
-    'Under \$1000',
-    '\$1000 - \$1500',
-    '\$1500 - \$2000',
-    '\$2000 - \$2500',
-    '\$2500+',
+    'Under \৳1000000',
+    '\৳1000000 - \৳1500000',
+    '\৳1500000 - \৳2000',
+    '\৳2000000 - \৳2500000',
+    '\৳25000000+',
   ];
   String _selectedPriceRange = 'Any Price';
 
@@ -106,20 +106,20 @@ class _BuildingUnitsPageState extends State<BuildingUnitsPage> {
           case 'Any Price':
             priceMatch = true;
             break;
-          case 'Under \$1000':
-            priceMatch = unitPrice < 1000;
+          case 'Under \৳10000000':
+            priceMatch = unitPrice < 10000000;
             break;
-          case '\$1000 - \$1500':
-            priceMatch = unitPrice >= 1000 && unitPrice < 1500;
+          case '\৳10000000 - \৳15000000':
+            priceMatch = unitPrice >= 10000000 && unitPrice < 15000000;
             break;
-          case '\$1500 - \$2000':
-            priceMatch = unitPrice >= 1500 && unitPrice < 2000;
+          case '\৳15000000 - \৳20000000':
+            priceMatch = unitPrice >= 15000000 && unitPrice < 20000000;
             break;
-          case '\$2000 - \$2500':
-            priceMatch = unitPrice >= 2000 && unitPrice < 2500;
+          case '\৳20000000 - \৳25000000':
+            priceMatch = unitPrice >= 20000000 && unitPrice < 25000000;
             break;
-          case '\$2500+':
-            priceMatch = unitPrice >= 2500;
+          case '\৳25000000+':
+            priceMatch = unitPrice >= 25000000;
             break;
           default:
             priceMatch = true;
