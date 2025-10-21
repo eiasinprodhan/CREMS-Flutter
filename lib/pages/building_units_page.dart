@@ -342,7 +342,7 @@ class _UnitCardState extends State<UnitCard> {
 
   String _formatCurrency(double? amount) {
     if (amount == null) return 'N/A';
-    return NumberFormat.currency(locale: 'en_US', symbol: '\$').format(amount);
+    return NumberFormat.currency(locale: 'en_US', symbol: '\৳').format(amount);
   }
 
   Future<void> _makePhoneCall(String phoneNumber) async {
