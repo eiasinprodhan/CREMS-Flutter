@@ -8,17 +8,16 @@ This system provides **interactive modules** for handling **unit bookings, EMI s
 ## 🧠 Overview
 
 This system streamlines real estate operations by connecting different functional areas such as **projects, customers, employees, and finances** into one intuitive platform.  
-Built with **Angular** on the frontend and **Spring Boot** on the backend, it ensures both performance and scalability.
+Built with **Flutter** on the frontend and **Spring Boot** on the backend, it ensures both performance and scalability.
 
 ---
 
 ## 🚀 Tech Stack
 
 ### 🖥️ **Frontend**
-- 🅰️ **Angular** — Modern web application framework  
-- 🟦 **TypeScript** — Type-safe JavaScript  
-- 🧱 **HTML5 / CSS3** — Responsive and accessible UI design  
-- 🎨 **Bootstrap / Angular Material** — Elegant, consistent design components  
+- 🅰️ **Flutter** — Modern cross platform application framework  
+- 🧱 **Dart** — Core frontend programming language  
+ 
 
 ### ⚙️ **Backend**
 - ☕ **Java** — Core backend programming language  
